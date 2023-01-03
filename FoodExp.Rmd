@@ -13,18 +13,128 @@ Per-capita food expenditure can serve as a proxy to understand consumption in th
 
 Some G2P transfers, credit disbursements and pensions alike are directed towards female members of the household, under the assumption that this could increase agency of the female members and prompt the resources to directly contribute to the overall welfare of the household. This is in comparison to male members that may direct the resources towards expenses outside the household, without directly benefiting the household. 
 
-Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference between per-capita food expenditure made by female and male household heads*. Answers to this question could have policy implications for development programs in their prioritizing/targeting of household heads.  
+Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference between per-capita food expenditure made by female and male household heads*. Answers to this question could have policy implications for development programs in their prioritizing/targeting of household heads. 
 
-```{r cars}
-summary(cars)
+```{r include=FALSE}
+library(haven)       #Import Stata .dta 
+library(labelled)
+library(sjlabelled)
+library(dplyr)       #Data manipulation
+library(knitr)       #Tables for presentation. Kable function
+library(data.table)  #Transpose
+library(rstatix)     #Summary stats 
+library(skimr)       #Get overview of data
+library(janitor)
 ```
 
-## Including Plots
+# Describing the Data
 
-You can also embed plots, for example:
+```{r echo=FALSE}
+#read and store the data set
+nids_dta <- read_dta("NIDS_Analysis_Final_2009.dta")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#change male column into factor with the value labels
+nids_dta <- nids_dta %>% mutate(Gender = ifelse(male == 1, "Male", "Female"))
+nids_dta$Gender <- as.factor(nids_dta$Gender)
+
+#This is a fairly clean and labelled STATA file. Dictionary in Appendix 1
+dictionary <- generate_dictionary(nids_dta)
+
+nids_dta %>% 
+  tabyl(Gender) %>% 
+  kable()
+  
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The NIDS dataset contains responses from around 6886 individual household heads in South Africa of which 54.14% are male and 45.86% are female. 
+
+```{r echo=FALSE}
+Table_1_1 <- nids_dta %>% 
+  tabyl(Gender, race) %>% 
+  adorn_totals(where ="col") %>% 
+  adorn_totals(where = "row") 
+ 
+names(Table_1_1)[2:5] <- c("African", "Coloured", "Indian", "White")
+
+
+# custom function to transpose 
+transpose_df <- function(df) {
+  t_df <- data.table::transpose(df)
+  colnames(t_df) <- rownames(df)
+  rownames(t_df) <- colnames(df)
+  t_df <- t_df %>%
+    tibble::rownames_to_column(.data = .) %>%
+    tibble::as_tibble(.)
+  return(t_df) 
+}
+
+Table_1_2 <- transpose_df(Table_1_1) 
+
+names(Table_1_2) <- as.character(Table_1_2[1,]) # sorting the column names
+
+Table_1_2 <- Table_1_2[-1,]
+
+Table_1_2$Female <- as.numeric(Table_1_2$Female)
+Table_1_2$Male <- as.numeric(Table_1_2$Male)
+Table_1_2$Total <- as.numeric(Table_1_2$Total)
+
+Table_1 <- Table_1_2
+
+Table_1_Final <- kable(Table_1)
+
+#Print the final table
+Table_1_Final
+```
+
+Since this dataset has been compiled only on household heads, the mean age of the respondents is quite high. For males the mean age is around 48 years while for females it is 51 years.
+Males in the data set seem to have completed around 1.5 years more of education than females on average. The average household size among the respondents is 4. However it should be noted that, female household heads tend to have larger households on average even when controlling for their race, age and education. Additionally, on average male household heads tend to earn more income per capita than female household heads.
+
+
+```{r echo=FALSE}
+#generate a few more descriptives
+Table_2_1 <- nids_dta %>% 
+                group_by(Gender) %>% 
+                     summarise(
+    "Mean Age" = round(mean(age, na.rm = TRUE), digits = 2),
+    "Mean Years Education" = round(mean(education, na.rm = TRUE), digits = 2),
+    "Mean HH Size" = round(mean(hhsize, na.rm = TRUE), digits = 2),
+    "Mean PerCap Income (Rands)" = round(mean(hhpcinc, na.rm = TRUE), digits = 2),
+    "Mean PerCap Food Expenditure (Rands)" = round(mean(pcfoodexp,na.rm = TRUE), digits = 2)
+    ) 
+
+
+Table_2_2 <- transpose(Table_2_1)
+rownames(Table_2_2) <- colnames(Table_2_1)
+colnames(Table_2_2) <- c("Female", "Male")
+  
+Table_2_3 <- Table_2_2[-1,]
+Table_2_3$Female <- as.numeric(Table_2_3$Female)
+Table_2_3$Male <- as.numeric(Table_2_3$Male)
+
+Table_2_Final <- kable(Table_2_3)
+
+Table_2_Final
+```
+
+The NIDS dataset contains responses from 6886 individual household heads in South
+Africa of which 54.14% are male and 45.86% are female. Since this dataset has been compiled
+only on household heads, the mean age of the respondents is quite high. For males the mean age
+is around 48 years while for females it is 51 years.
+
+Males in the data set have completed around 1.5 years more of education than females
+on average. The average household size among the respondents is 4. Additionally, female household heads tend to have larger households on average even when controlling for their race, age and education. 
+
+Important to note, on average male household heads tend to earn more income per capita than female household heads.^[this is a footnote]
+
+
+
+
+
+## Appendix
+
+### Appendix 1: Data Dictionary
+
+```{r echo=FALSE}
+dictionary
+```
+
