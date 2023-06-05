@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Per-capita food expenditure can serve as a proxy to understand consumption in the household: expenditure that directly relates to their wellbeing. 
+Understanding per-capita food expenditure or consumption can serve as a proxy to understand household welfare. 
 
 Some G2P transfers, credit disbursements and pensions alike are directed towards female members of the household, under the assumption that this could increase agency of the female members and prompt the resources to directly contribute to the overall welfare of the household. This is in comparison to male members that may direct the resources towards expenses outside the household, without directly benefiting the household. 
 
