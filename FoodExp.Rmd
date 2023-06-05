@@ -15,8 +15,6 @@ Some G2P transfers, credit disbursements and pensions alike are directed towards
 
 Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference between per-capita food expenditure made by female and male household heads*. Answers to this question could have policy implications for development programs in their prioritizing/targeting of household heads. 
 
-Testing to be deleted later. Trying to see if Github connections work.
-
 ```{r include=FALSE}
 library(haven)       #Import Stata .dta 
 library(labelled)
