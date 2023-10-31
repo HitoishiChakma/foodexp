@@ -1,21 +1,18 @@
 ---
-title: "Do male and female household heads spend differently on average on household welfare?"
+title: "Consumption, as predicted by the gender of the household head"
 author: "Hitoishi Chakma"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: 
+  pdf_document: 
+    fig_caption: yes
+    number_sections: yes
+bibliography: FoodExpCitations.bib
+link-citations: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+knitr::opts_chunk$set(echo = FALSE)
 
-Understanding per-capita food expenditure or consumption can serve as a proxy to understand household welfare. 
-
-Some G2P transfers, credit disbursements and pensions alike are directed towards female members of the household, under the assumption that this could increase agency of the female members and prompt the resources to directly contribute to the overall welfare of the household. This is in comparison to male members that may direct the resources towards expenses outside the household, without directly benefiting the household. 
-
-Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference between per-capita food expenditure made by female and male household heads*. Answers to this question could have policy implications for development programs in their prioritizing/targeting of household heads. 
-
-```{r include=FALSE}
 library(haven)       #Import Stata .dta 
 library(labelled)
 library(sjlabelled)
@@ -25,11 +22,22 @@ library(data.table)  #Transpose
 library(rstatix)     #Summary stats 
 library(skimr)       #Get overview of data
 library(janitor)
+
 ```
 
-# Describing the Data
+# Introduction:
 
-```{r echo=FALSE}
+Per-capita food expenditure can serve as a proxy to understand consumption in the household, consumption that correlates to household well-being. Learning about the differences in how male and female household heads spend on consumption, can be useful in determining how best to ensure household wellbeing overall. Some G2P transfers, credit disbursements and other poverty targeted programs are designed to direct their payments towards female members of the household. 
+
+Targeting of female household members to receive payments is done under the assumptions that it could increase the agency of the female members and prompt a greater portion of the resources to contribute to the well-being of the entire household.^[
+Women have traditionally been the target for large social transfer programs [@simon2019effect]. World Bank recommends depositing payments directly into women's accounts [@wbg2020bull]. @hagen2017impact summarizes some of the evidences around gender sensitive cash transfer designs.
+] 
+This brief aims to provide  additional insights into deciding whether such operational policies can be effective. Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference in per-capita food expenditure by female and male household heads*. Insights into this question could have policy implications especially for development interventions in their prioritizing/targeting of household heads.
+
+
+# Describing the Data:
+
+```{r dataload}
 #read and store the data set
 nids_dta <- read_dta("NIDS_Analysis_Final_2009.dta")
 
@@ -40,58 +48,37 @@ nids_dta$Gender <- as.factor(nids_dta$Gender)
 #This is a fairly clean and labelled STATA file. Dictionary in Appendix 1
 dictionary <- generate_dictionary(nids_dta)
 
-nids_dta %>% 
-  tabyl(Gender) %>% 
-  kable()
+#nids_dta %>% 
+#  tabyl(Gender) %>% 
+#  kable()
   
 ```
 
-The NIDS dataset contains responses from around 6886 individual household heads in South Africa of which 54.14% are male and 45.86% are female. 
+The NIDS dataset contains responses from 6865 individual household heads in South Africa of which 54.13% are male and 45.87% are female.^[This omits 21 null values for race.] Almost 75% of the respondents have identified as belonging to the *African* race, with the rest of respondents identifying as *Coloured*, *Indian* and *White*. The mean age of the respondents is quite high at almost 49 years. This could be due to the dataset containing data only on household heads, who tend to be older.
 
-```{r echo=FALSE}
-Table_1_1 <- nids_dta %>% 
-  tabyl(Gender, race) %>% 
+```{r}
+Table_1 <- nids_dta %>% 
+  filter(!is.na(race)) %>%
+  tabyl(race, Gender) %>% 
   adorn_totals(where ="col") %>% 
   adorn_totals(where = "row") 
  
-names(Table_1_1)[2:5] <- c("African", "Coloured", "Indian", "White")
+Table_1[1:4,1] <- c("African", "Coloured", "Indian", "White") 
 
+names(Table_1)[1] <- "Race" 
 
-# custom function to transpose 
-transpose_df <- function(df) {
-  t_df <- data.table::transpose(df)
-  colnames(t_df) <- rownames(df)
-  rownames(t_df) <- colnames(df)
-  t_df <- t_df %>%
-    tibble::rownames_to_column(.data = .) %>%
-    tibble::as_tibble(.)
-  return(t_df) 
-}
-
-Table_1_2 <- transpose_df(Table_1_1) 
-
-names(Table_1_2) <- as.character(Table_1_2[1,]) # sorting the column names
-
-Table_1_2 <- Table_1_2[-1,]
-
-Table_1_2$Female <- as.numeric(Table_1_2$Female)
-Table_1_2$Male <- as.numeric(Table_1_2$Male)
-Table_1_2$Total <- as.numeric(Table_1_2$Total)
-
-Table_1 <- Table_1_2
-
-Table_1_Final <- kable(Table_1)
+Table_1_Final <- kable(Table_1,
+                       caption = "Number of respondents tabulated by gender and race"
+                       )
 
 #Print the final table
 Table_1_Final
 ```
 
-Since this dataset has been compiled only on household heads, the mean age of the respondents is quite high. For males the mean age is around 48 years while for females it is 51 years.
-Males in the data set seem to have completed around 1.5 years more of education than females on average. The average household size among the respondents is 4. However it should be noted that, female household heads tend to have larger households on average even when controlling for their race, age and education. Additionally, on average male household heads tend to earn more income per capita than female household heads.
-
+The average female respondent is older than the male respondent. On the other hand, the average years of education completed by male respondents is almost 1.5 years more than females. It is notable that, female household heads tend to have larger households on average even when controlling for their race, age and education. Additionally, male household heads tend to earn more income and spend more on average than female household heads. As a result, it appears that female household heads on average earn less, spend less, are older, have larger households and also have less years of education than male household heads.
 
 ```{r echo=FALSE}
-#generate a few more descriptives
+#generate a summary table of various means grouped by gender
 Table_2_1 <- nids_dta %>% 
                 group_by(Gender) %>% 
                      summarise(
@@ -102,8 +89,8 @@ Table_2_1 <- nids_dta %>%
     "Mean PerCap Food Expenditure (Rands)" = round(mean(pcfoodexp,na.rm = TRUE), digits = 2)
     ) 
 
-
-Table_2_2 <- transpose(Table_2_1)
+#need to transpose and clean up row and column names for better presentation
+Table_2_2 <- transpose(Table_2_1) 
 rownames(Table_2_2) <- colnames(Table_2_1)
 colnames(Table_2_2) <- c("Female", "Male")
   
@@ -111,30 +98,194 @@ Table_2_3 <- Table_2_2[-1,]
 Table_2_3$Female <- as.numeric(Table_2_3$Female)
 Table_2_3$Male <- as.numeric(Table_2_3$Male)
 
-Table_2_Final <- kable(Table_2_3)
-
+Table_2_Final <- kable(Table_2_3,
+                       caption = "Summary table of various means grouped by gender"
+                       )
+#Final Table
 Table_2_Final
 ```
 
-The NIDS dataset contains responses from 6886 individual household heads in South
-Africa of which 54.14% are male and 45.86% are female. Since this dataset has been compiled
-only on household heads, the mean age of the respondents is quite high. For males the mean age
-is around 48 years while for females it is 51 years.
 
-Males in the data set have completed around 1.5 years more of education than females
-on average. The average household size among the respondents is 4. Additionally, female household heads tend to have larger households on average even when controlling for their race, age and education. 
-
-Important to note, on average male household heads tend to earn more income per capita than female household heads.^[this is a footnote]
+# Difference in per-capita expenditure between male and female household heads
 
 
 
+## Caveats
+
+As conventional wisdom would hold that alcoholism and smoking may lead to decreased spending on household welfare, the model found that this was largely true. However we ended up not controlling for smoking and alcohol consumption as these did not produce a noticeable difference in the fit of the model.
+
+Similarly employment would ensure more income to be spent on household welfare, however this variable did not improve the model by much. Additionally since household per capita income is a proxy for employment which was used thoroughly in the model, making the inclusion of employment was not necessary.
+
+Lastly, age was not used as a control as most of the respondents being household heads and income earners, different levels of age should not produce a noticeable difference.
+
+# Conclusion:
+
+It seems that male household heads tend to spend around 8.71% more on food than female household heads. This result is statistically measurable even when controlling for income, education, household size and race. This notes for the fact that males tend to earn more, be better educated and preside over smaller households. However as income increase males tend to decrease their expenditure on food over females. This is a 1.89% decrease for every 1000 rand more of income. This signifies that males do not proportionately increase their expenditure within the household for food, as their incomes rises. So in the long run, or at higher income levels males may spend less than females on average, thus aligning with our hypothesis.
+
+This analysis is limited by the fact that we have taken only food expenditure as our response variable. Expenditure on household welfare also includes expenditure on education, health, nutrition etc. A complete understanding of the hypothesis can be achieved by including these expenditures into account. In light of the above analysis, it is recommended that the SACF household skills management program target males over females.
 
 
-## Appendix
+# References
+<div id="refs"></div>
 
-### Appendix 1: Data Dictionary
+
+
+# Appendix:
+
+## Regression Model
+
+### Model 1
+
+The dependent variable for percapita food expenditure is heavily right skewed. As a result natural log transformation is used to make the distribution normal in all the models.
+
+```{r fig.cap = "Log transformation allows percapita food expenditure to be normally distributed"}
+hist1 <- hist(log(nids_dta$pcfoodexp))
+```
+
+
+For the initial model we perform a regression of the dependent variable against gender. This model shows statistically significant differences between male and female household heads when it comes to per capita food expenditure. Male household heads tend to spend almost 32% more on average than female household heads. The initial model can thereby be expressed as below:
+
+$$log(\text{PerCapFoodEx}) \approx \hat\beta_0 + \hat\beta_1(\text{Gender})$$
+This basic model seems to have very weak explanatory powers. However it find a significant positive relationship between food expenditure and being male.
+
+```{r}
+m1 <- lm(log(pcfoodexp) ~ Gender, 
+         data = nids_dta) 
+summary(m1)
+```
+### Model 2
+
+To improve on the initial model, we will now control for individual characteristics such as age, years of education, whether the individual is a highschool grad, and household characteristics such as household size and whether there is a cellphone in the household.
+
+The new model thereby will include variables around individual characteristics and household characteristics:
+$$log(\text{PerCapFoodEx}) \approx 
+  \hat\beta_0 + 
+  \hat\beta_1(\text{Gender}) +
+  \hat\beta_2(\text{Individual and HH Characteristics})
+  $$
+Interestingly this model finds a positive relationship between per-capita food expenditure and cellphone ownership in the household. In fact being highschool grads spend 42% more on food than non high school grads.  
+
+```{r}
+
+#Convert HSGrad variable to factor 
+nids_dta$hsgradNEW <- as.factor(nids_dta$hsgrad)
+levels(nids_dta$hsgradNEW) <- c("NO", "YES")
+
+#Convert Cellphone variable to factor
+nids_dta$cellphoneNEW <- as.factor(nids_dta$cellphone)
+levels(nids_dta$cellphoneNEW) <- c("NO", "YES")
+
+m2 <- lm(log(pcfoodexp) ~ Gender 
+         + age
+         + education 
+         + hsgradNEW
+         + hhsize
+         + cellphoneNEW
+         , 
+         data = nids_dta
+         ) 
+
+summary(m2)
+```
+### Model 3
+
+Right now we want to further improve on model 2, by including the variables around race. As discussed in Section 2, we have respondents in the data set who have identified as being *African*,*Coloured*, *Indian* and *White*. 
+
+Once we add race, the new model can be expressed as: 
+$$log(\text{PerCapFoodEx}) \approx 
+  \hat\beta_0 + 
+  \hat\beta_1(\text{Gender}) +
+  \hat\beta_2(\text{Individual and HH Characteristics}) +
+  \hat\beta_2(\text{Coloured}) +
+  \hat\beta_2(\text{Indian}) +
+  \hat\beta_2(\text{White})
+  $$
+Interstingly, we find that being *African* comes with significant disadvantages as, every other race spends significant more on average on food than *Africans".
+
+```{r}
+
+nids_dta$racefactor <- as.factor(nids_dta$race)
+levels(nids_dta$racefactor) <- c("African", "Coloured", "Indian", "White")
+
+m3 <- lm(log(pcfoodexp) ~ Gender 
+         + age
+         + education 
+         + hsgradNEW
+         + hhsize
+         + cellphoneNEW
+         + racefactor
+         , 
+         data = nids_dta
+         ) 
+
+
+summary(m3)
+```
+### Model 4
+
+As it stands the, Model 3 seems pretty strong. However, we are yet to include another variable of interest into our model, that is the household per capital income that is recorded as rands per month in the data set.
+
+Once we include that into our model our final model stands as:
+
+$$log(\text{PerCapFoodEx}) \approx 
+  \hat\beta_0 
+  + \hat\beta_1(\text{Gender}) 
+  + \hat\beta_2(\text{Individual and HH Characteristics}) 
+  + \hat\beta_C(\text{Coloured}) 
+  + \hat\beta_I(\text{Indian}) 
+  + \hat\beta_W(\text{White}) 
+  + \hat\beta_3(\text{HH PerCap Income}) 
+  $$
+
+Including household per-capita income into the model makes it more complete. We find that male household heads spend only 9.5% more on average on food than female household heads. However this needs to be more carefully interpreted and a more nuanced discussion on this can be found in Section 3. 
+
+```{r}
+
+m4 <- lm(log(pcfoodexp) ~ Gender
+         + age
+         + education 
+         + hsgradNEW
+         + hhsize
+         + cellphoneNEW
+         + racefactor
+         + hhpcinc
+         , 
+         data = nids_dta
+         ) 
+
+summary(m4)
+```
+
+
+
+```{r}
+plot(log(pcfoodexp) ~ 
+       hhpcinc
+     , data=nids_dta, pch=16, cex=0.3)
+
+abline(a=coef(m4)[1], b=coef(m4)[11], col="red")
+
+```
+
+
+```{r}
+hist(resid(m4))
+```
+
+```{r}
+qqnorm(resid(m4))
+```
+
+
+
+## Data Dictionary
 
 ```{r echo=FALSE}
-dictionary
+kable(dictionary[,c(2,3,6)])
 ```
+
+
+
+
+
 
