@@ -23,9 +23,12 @@ library(rstatix)     #Summary stats
 library(skimr)       #Get overview of data
 library(janitor)
 
+
+library(ggplot2)
+
 ```
 
-# Introduction:
+# Introduction
 
 Per-capita food expenditure can serve as a proxy to understand consumption in the household, consumption that correlates to household well-being. Learning about the differences in how male and female household heads spend on consumption, can be useful in determining how best to ensure household wellbeing overall. Some G2P transfers, credit disbursements and other poverty targeted programs are designed to direct their payments towards female members of the household. 
 
@@ -35,7 +38,7 @@ Women have traditionally been the target for large social transfer programs [@si
 This brief aims to provide  additional insights into deciding whether such operational policies can be effective. Using data compiled from the 2009 National Income Dynamics Study (NIDS), we investigate whether there is a *measurable difference in per-capita food expenditure by female and male household heads*. Insights into this question could have policy implications especially for development interventions in their prioritizing/targeting of household heads.
 
 
-# Describing the Data:
+# Describing the data
 
 ```{r dataload}
 #read and store the data set
@@ -106,43 +109,51 @@ Table_2_Final
 ```
 
 
-# Difference in per-capita expenditure between male and female household heads
+# Do female and male household heads spend differently?
 
+Male household heads spend 368 Rands and female household heads 262 Rands on
+food on average (See Table 2). We find male household heads spend almost 32 percent more on average compared to female household heads. This difference on average expenditure is statistically mesaurable (See Appendix: Model 1).
 
+However we need to note from Section 2 above that compared to male households heads, females tend tend to earn less, spend less, are older, have larger households and have less years of education. It would be prudent to be aware of these factors and try to control for these variables. 
+
+When adding more complexity to the model by controlling for individual and household characteristics such as age, education, household size, and cellphone ownership, we find that male household heads tend to spend only 17.6 percent more on average than female household heads (See Appendix: Model 2). This almost halves the previos estimate of the average difference in expenditure.
+
+It should also be noted that there is persistent and widespread difference between the races when it comes to income, education, household size, employment etc. When we control for race, we find that male household heads spend only 11.4 percent more on average that female household heads (See Appendix: Model 3).
+
+Lastly, we have so far omitted considerations for income itself as a factor that could have some influence on the results. When controlling for income we find that male household heads spend only 9.4 percent more on average than female household heads (see Appendix: Model 4).
 
 ## Caveats
 
 As conventional wisdom would hold that alcoholism and smoking may lead to decreased spending on household welfare, the model found that this was largely true. However we ended up not controlling for smoking and alcohol consumption as these did not produce a noticeable difference in the fit of the model.
 
-Similarly employment would ensure more income to be spent on household welfare, however this variable did not improve the model by much. Additionally since household per capita income is a proxy for employment which was used thoroughly in the model, making the inclusion of employment was not necessary.
+Similarly employment would ensure more income to be spent on household welfare, however this variable did not improve the model by much.  Additionally since household per capita income is a proxy for employment which was used thoroughly in the model, making the inclusion of employment was not necessary.
 
-Lastly, age was not used as a control as most of the respondents being household heads and income earners, different levels of age should not produce a noticeable difference.
+# Conclusion
 
-# Conclusion:
+It seems that male household heads tend to spend around 9.4% more on food than female household heads. This result is statistically measurable when controlling for individual, household and socio-economic chracteristic such as age, income, education, household size and race. This result needs to be considered in the context of the fact that males tend to earn more, be better educated and preside over smaller households. 
 
-It seems that male household heads tend to spend around 8.71% more on food than female household heads. This result is statistically measurable even when controlling for income, education, household size and race. This notes for the fact that males tend to earn more, be better educated and preside over smaller households. However as income increase males tend to decrease their expenditure on food over females. This is a 1.89% decrease for every 1000 rand more of income. This signifies that males do not proportionately increase their expenditure within the household for food, as their incomes rises. So in the long run, or at higher income levels males may spend less than females on average, thus aligning with our hypothesis.
+This analysis is limited by the fact that we have taken only food expenditure as our response variable. Expenditure on household welfare also includes expenditure on education, health, nutrition etc. A complete understanding of the hypothesis can be achieved by including these expenditures into account. 
 
-This analysis is limited by the fact that we have taken only food expenditure as our response variable. Expenditure on household welfare also includes expenditure on education, health, nutrition etc. A complete understanding of the hypothesis can be achieved by including these expenditures into account. In light of the above analysis, it is recommended that the SACF household skills management program target males over females.
+Looking forward, the study could be further enriched by looking at how expenditure in food changes as income increases for both male and female household heads.
+
 
 
 # References
 <div id="refs"></div>
 
-
-
+\newpage
 # Appendix:
 
 ## Regression Model
 
-### Model 1
-
+### Log Transformation
 The dependent variable for percapita food expenditure is heavily right skewed. As a result natural log transformation is used to make the distribution normal in all the models.
 
 ```{r fig.cap = "Log transformation allows percapita food expenditure to be normally distributed"}
-hist1 <- hist(log(nids_dta$pcfoodexp))
+ggplot(nids_dta, aes(x = log(pcfoodexp))) + geom_histogram(binwidth = 0.1)
 ```
 
-
+### Model 1
 For the initial model we perform a regression of the dependent variable against gender. This model shows statistically significant differences between male and female household heads when it comes to per capita food expenditure. Male household heads tend to spend almost 32% more on average than female household heads. The initial model can thereby be expressed as below:
 
 $$log(\text{PerCapFoodEx}) \approx \hat\beta_0 + \hat\beta_1(\text{Gender})$$
@@ -163,7 +174,7 @@ $$log(\text{PerCapFoodEx}) \approx
   \hat\beta_1(\text{Gender}) +
   \hat\beta_2(\text{Individual and HH Characteristics})
   $$
-Interestingly this model finds a positive relationship between per-capita food expenditure and cellphone ownership in the household. In fact being highschool grads spend 42% more on food than non high school grads.  
+Interestingly this model finds a positive relationship between per-capita food expenditure and cellphone ownership in the household. In fact high school grads spend 42% more on food than non high school grads. However, there still exists a 17% premium on food expenditure for being a male household head compared to female.
 
 ```{r}
 
@@ -277,7 +288,7 @@ qqnorm(resid(m4))
 ```
 
 
-
+\newpage
 ## Data Dictionary
 
 ```{r echo=FALSE}
